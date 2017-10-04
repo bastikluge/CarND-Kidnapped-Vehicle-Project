@@ -165,8 +165,8 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
       if ( pred_to_obs_index[n] != -1 )
       {
         const LandmarkObs &obs = observations[pred_to_obs_index[n]];
-        if ( i == 0 ) cout << "Landmark association [" << pred.id << "]: pred=(" << pred.x << ", " << pred.y << "), ";
-        if ( i == 0 ) cout <<                                            "obs=(" << obs.x  << ", " << obs.y  << ")" << endl;
+        //if ( i == 0 ) cout << "Landmark association [" << pred.id << "]: pred=(" << pred.x << ", " << pred.y << "), ";
+        //if ( i == 0 ) cout <<                                            "obs=(" << obs.x  << ", " << obs.y  << ")" << endl;
         dx = pred.x - obs.x;
         dy = pred.y - obs.y;
       }
@@ -179,7 +179,7 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
         + (dy * dy) / (std_landmark[1] * std_landmark[1]);
       arg *= -0.5;
       double probab = exp(arg) / (2*M_PI * std_landmark[0] * std_landmark[1]);
-      if ( i == 0 ) cout << "   ---> probab=" << probab << endl;
+      //if ( i == 0 ) cout << "   ---> probab=" << probab << endl;
       p.weight *= probab;
     }
     weights[i] = p.weight;
@@ -236,9 +236,11 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
     {
       if ( pred_to_obs_index[n] != -1 )
       {
-        associations.push_back(predicted[n].id);
-
         const LandmarkObs &obs = observations[pred_to_obs_index[n]];
+
+        cout << "Landmark association [" << predicted[n].id << "]: pred=(" << predicted[n].x << ", " << predicted[n].y << "), ";
+        cout <<                                                    "obs=(" << obs.x          << ", " << obs.y          << ")" << endl;
+        associations.push_back(predicted[n].id);
         
         // convert to world coordinates
         double dx_world = cos(p.theta) * obs.x - sin(p.theta) * obs.y;
@@ -247,6 +249,7 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
         sense_y.push_back(p.y + dy_world);
       }
     }
+    cout << "   ---> weight=" << p.weight << endl;
     SetAssociations(p, associations, sense_x, sense_y);
   }
   // debug output end
