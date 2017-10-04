@@ -112,6 +112,7 @@ void ParticleFilter::dataAssociation(const std::vector<LandmarkObs>& predicted, 
                       + (predicted[p].y - observations[o].y) * (predicted[p].y - observations[o].y);
       if ( cur_dist < min_dist )
       {
+        min_dist             = cur_dist;
         pred_to_obs_index[p] = o;
       }
     }
@@ -164,8 +165,8 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
         if ( pred_to_obs_index[n] != -1 )
         {
           const LandmarkObs &obs = observations[pred_to_obs_index[n]];
-          cout << "Landmark association [" << pred.id << "]: pred=(" << pred.x << ", " << pred.y << "), ";
-          cout <<                                            "obs=(" << obs.x  << ", " << obs.y  << ")" << endl;
+          if ( i == 0 ) cout << "Landmark association [" << pred.id << "]: pred=(" << pred.x << ", " << pred.y << "), ";
+          if ( i == 0 ) cout <<                                            "obs=(" << obs.x  << ", " << obs.y  << ")" << endl;
           dx = pred.x - obs.x;
           dy = pred.y - obs.y;
         }
@@ -178,7 +179,7 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
           + (dy * dy) / (std_landmark[1] * std_landmark[1]);
         arg *= -0.5;
         double probab = exp(arg) / (2*M_PI * std_landmark[0] * std_landmark[1]);
-        cout << "   ---> probab=" << probab << endl;
+        if ( i == 0 ) cout << "   ---> probab=" << probab << endl;
         p.weight *= probab;
       }
       weights[i] = p.weight;
