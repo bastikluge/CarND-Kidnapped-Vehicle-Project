@@ -75,10 +75,13 @@ public:
 	/**
 	 * dataAssociation Finds which observations correspond to which landmarks (likely by using
 	 *   a nearest-neighbors data association).
-	 * @param predicted Vector of predicted landmark observations
-	 * @param observations Vector of landmark observations
+	 * @param predicted          Vector of predicted landmark observations
+	 * @param observations       Vector of landmark observations
+   * @param pred_to_obs_index  Output vector of size predicted.size(), for which the i-th element
+   *                           contains the index within observations, which is associated with predicted[i].
+   *                           If no element is associated, the error value -1 is stored.
 	 */
-	void dataAssociation(std::vector<LandmarkObs> predicted, std::vector<LandmarkObs>& observations);
+	void dataAssociation(const std::vector<LandmarkObs>& predicted, const std::vector<LandmarkObs>& observations, std::vector<int> &pred_to_obs_index);
 	
 	/**
 	 * updateWeights Updates the weights for each particle based on the likelihood of the 
