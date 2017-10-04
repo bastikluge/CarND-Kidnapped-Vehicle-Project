@@ -41,8 +41,8 @@ void ParticleFilter::init(double x, double y, double theta, double std[]) {
     p.x      = dist_x(gen);
     p.y      = dist_y(gen);
     p.theta  = dist_theta(gen);
-    while ( p.theta >  M_PI ) p.theta -= M_PI;
-    while ( p.theta < -M_PI ) p.theta += M_PI;
+    while ( p.theta >  M_PI ) p.theta -= 2.0*M_PI;
+    while ( p.theta < -M_PI ) p.theta += 2.0*M_PI;
     p.weight = weights[i];
     p.associations.clear();
     p.sense_x.clear();
@@ -75,8 +75,8 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
       p.x     += dist_x(gen);
       p.y     += dist_y(gen);
       p.theta += dist_theta(gen);
-      while ( p.theta >  M_PI ) p.theta -= M_PI;
-      while ( p.theta < -M_PI ) p.theta += M_PI;
+      while ( p.theta >  M_PI ) p.theta -= 2.0*M_PI;
+      while ( p.theta < -M_PI ) p.theta += 2.0*M_PI;
       //if ( i < 10 ) cout << "    ... to (" << p.x << ", " << p.y << ", " << p.theta << ")" << endl;
     }
   }
@@ -95,8 +95,8 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
       p.x     += dist_x(gen);
       p.y     += dist_y(gen);
       p.theta += dist_theta(gen);
-      while ( p.theta >  M_PI ) p.theta -= M_PI;
-      while ( p.theta < -M_PI ) p.theta += M_PI;
+      while ( p.theta >  M_PI ) p.theta -= 2.0*M_PI;
+      while ( p.theta < -M_PI ) p.theta += 2.0*M_PI;
       //if ( i < 10 ) cout << "    ... to (" << p.x << ", " << p.y << ", " << p.theta << ")" << endl;
     }
   }
@@ -248,7 +248,7 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 
         cout << " -> LM[" << predicted[n].id << "]: pos=(" << predicted_world[n].x_f << ", " << predicted_world[n].y_f << ")" << endl;
         cout << "       pred=(" << predicted[n].x << ", " << predicted[n].y << "), ";
-        cout <<         "obs=(" << obs.x          << ", " << obs.y          << "), " << endl;
+        cout <<         "obs=(" << obs.x          << ", " << obs.y          << "), ";
         cout << "dist=" << (predicted[n].x-obs.x)*(predicted[n].x-obs.x) + (predicted[n].y-obs.y)*(predicted[n].y-obs.y) << endl; 
         associations.push_back(predicted[n].id);
         
