@@ -41,8 +41,8 @@ void ParticleFilter::init(double x, double y, double theta, double std[]) {
     p.x      = dist_x(gen);
     p.y      = dist_y(gen);
     p.theta  = dist_theta(gen);
-    while ( p.theta >  M_PI ) p.theta -= 2.0*M_PI;
-    while ( p.theta < -M_PI ) p.theta += 2.0*M_PI;
+    //while ( p.theta >  M_PI ) p.theta -= 2.0*M_PI;
+    //while ( p.theta < -M_PI ) p.theta += 2.0*M_PI;
     p.weight = weights[i];
     p.associations.clear();
     p.sense_x.clear();
@@ -75,8 +75,8 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
       p.x     += dist_x(gen);
       p.y     += dist_y(gen);
       p.theta += dist_theta(gen);
-      while ( p.theta >  M_PI ) p.theta -= 2.0*M_PI;
-      while ( p.theta < -M_PI ) p.theta += 2.0*M_PI;
+      //while ( p.theta >  M_PI ) p.theta -= 2.0*M_PI;
+      //while ( p.theta < -M_PI ) p.theta += 2.0*M_PI;
       //if ( i < 10 ) cout << "    ... to (" << p.x << ", " << p.y << ", " << p.theta << ")" << endl;
     }
   }
@@ -88,15 +88,15 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
       Particle &p = particles[i];
       //if ( i < 10 ) cout << "moved from (" << p.x << ", " << p.y << ", " << p.theta << ")" << endl;
       p.x     += velocity / yaw_rate * (sin(p.theta + yaw_rate * delta_t) - sin(p.theta));
-      p.x     += velocity / yaw_rate * (cos(p.theta)                      - cos(p.theta + yaw_rate * delta_t));
+      p.y     += velocity / yaw_rate * (cos(p.theta)                      - cos(p.theta + yaw_rate * delta_t));
       p.theta += yaw_rate * delta_t;
 
       // process noise
       p.x     += dist_x(gen);
       p.y     += dist_y(gen);
       p.theta += dist_theta(gen);
-      while ( p.theta >  M_PI ) p.theta -= 2.0*M_PI;
-      while ( p.theta < -M_PI ) p.theta += 2.0*M_PI;
+      //while ( p.theta >  M_PI ) p.theta -= 2.0*M_PI;
+      //while ( p.theta < -M_PI ) p.theta += 2.0*M_PI;
       //if ( i < 10 ) cout << "    ... to (" << p.x << ", " << p.y << ", " << p.theta << ")" << endl;
     }
   }
