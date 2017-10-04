@@ -75,6 +75,8 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
       p.x     += dist_x(gen);
       p.y     += dist_y(gen);
       p.theta += dist_theta(gen);
+      while ( p.theta >  M_PI ) p.theta -= M_PI;
+      while ( p.theta < -M_PI ) p.theta += M_PI;
       //if ( i < 10 ) cout << "    ... to (" << p.x << ", " << p.y << ", " << p.theta << ")" << endl;
     }
   }
@@ -93,6 +95,8 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
       p.x     += dist_x(gen);
       p.y     += dist_y(gen);
       p.theta += dist_theta(gen);
+      while ( p.theta >  M_PI ) p.theta -= M_PI;
+      while ( p.theta < -M_PI ) p.theta += M_PI;
       //if ( i < 10 ) cout << "    ... to (" << p.x << ", " << p.y << ", " << p.theta << ")" << endl;
     }
   }
@@ -201,6 +205,7 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
   {
     const Particle &p = particles[best_idx];
     std::vector<LandmarkObs> predicted;
+    std::vector<Map::single_landmark_s> predicted_world;
     unsigned num_landmarks = map_landmarks.landmark_list.size();
     predicted.reserve(num_landmarks);
     for ( unsigned n=0; n<num_landmarks; n++ )
@@ -222,6 +227,7 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
         pred.y = -sin(p.theta) * dx_world + cos(p.theta) * dy_world;
 
         predicted.push_back(pred);
+        predicted_world.push_back(landmark);
       }
     }
 
@@ -229,7 +235,7 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
     std::vector<int> pred_to_obs_index;
     dataAssociation(predicted, observations, pred_to_obs_index);
 
-    cout << "Best particle: (" << p.x << ", " << p.y << ") with weight " << p.weight << endl;
+    cout << "Best particle: (" << p.x << ", " << p.y << ", " << p.theta << ") with weight " << p.weight << endl;
 
     // set associations
     std::vector<int> associations;
@@ -240,8 +246,10 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
       {
         const LandmarkObs &obs = observations[pred_to_obs_index[n]];
 
-        cout << " --> Landmark association [" << predicted[n].id << "]: pred=(" << predicted[n].x << ", " << predicted[n].y << "), ";
-        cout <<                                                         "obs=(" << obs.x          << ", " << obs.y          << ")" << endl;
+        cout << " -> LM[" << predicted[n].id << "]: pos=(" << predicted_world[n].x_f << ", " << predicted_world[n].y_f << ")" << endl;
+        cout << "       pred=(" << predicted[n].x << ", " << predicted[n].y << "), ";
+        cout <<         "obs=(" << obs.x          << ", " << obs.y          << "), " << endl;
+        cout << "dist=" << (predicted[n].x-obs.x)*(predicted[n].x-obs.x) + (predicted[n].y-obs.y)*(predicted[n].y-obs.y) << endl; 
         associations.push_back(predicted[n].id);
         
         // convert to world coordinates
