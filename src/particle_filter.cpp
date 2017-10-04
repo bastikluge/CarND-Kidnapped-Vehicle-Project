@@ -66,7 +66,7 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
     {
       // exact process model
       Particle &p = particles[i];
-      if ( i < 10 ) cout << "moved from (" << p.x << ", " << p.y << ", " << p.theta << ")" << endl;
+      //if ( i < 10 ) cout << "moved from (" << p.x << ", " << p.y << ", " << p.theta << ")" << endl;
       p.x += velocity * delta_t * cos(p.theta);
       p.y += velocity * delta_t * sin(p.theta);
       // p.theta = p.theta;
@@ -75,7 +75,7 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
       p.x     += dist_x(gen);
       p.y     += dist_y(gen);
       p.theta += dist_theta(gen);
-      if ( i < 10 ) cout << "    ... to (" << p.x << ", " << p.y << ", " << p.theta << ")" << endl;
+      //if ( i < 10 ) cout << "    ... to (" << p.x << ", " << p.y << ", " << p.theta << ")" << endl;
     }
   }
   else
@@ -84,7 +84,7 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
     {
       // exact process model
       Particle &p = particles[i];
-      if ( i < 10 ) cout << "moved from (" << p.x << ", " << p.y << ", " << p.theta << ")" << endl;
+      //if ( i < 10 ) cout << "moved from (" << p.x << ", " << p.y << ", " << p.theta << ")" << endl;
       p.x     += velocity / yaw_rate * (sin(p.theta + yaw_rate * delta_t) - sin(p.theta));
       p.x     += velocity / yaw_rate * (cos(p.theta)                      - cos(p.theta + yaw_rate * delta_t));
       p.theta += yaw_rate * delta_t;
@@ -93,7 +93,7 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
       p.x     += dist_x(gen);
       p.y     += dist_y(gen);
       p.theta += dist_theta(gen);
-      if ( i < 10 ) cout << "    ... to (" << p.x << ", " << p.y << ", " << p.theta << ")" << endl;
+      //if ( i < 10 ) cout << "    ... to (" << p.x << ", " << p.y << ", " << p.theta << ")" << endl;
     }
   }
 }
@@ -122,68 +122,135 @@ void ParticleFilter::dataAssociation(const std::vector<LandmarkObs>& predicted, 
 void ParticleFilter::updateWeights(double sensor_range, double std_landmark[], 
   const std::vector<LandmarkObs> &observations, const Map &map_landmarks) {
 
-    // loop over all particles
-    for ( int i=0; i<num_particles; i++ )
+  // loop over all particles
+  for ( int i=0; i<num_particles; i++ )
+  {
+    // predict measurements for this particle
+    Particle &p = particles[i];
+    std::vector<LandmarkObs> predicted;
+    unsigned num_landmarks = map_landmarks.landmark_list.size();
+    predicted.reserve(num_landmarks);
+    for ( unsigned n=0; n<num_landmarks; n++ )
     {
-      // predict measurements for this particle
-      Particle &p = particles[i];
-      std::vector<LandmarkObs> predicted;
-      unsigned num_landmarks = map_landmarks.landmark_list.size();
-      predicted.reserve(num_landmarks);
-      for ( unsigned n=0; n<num_landmarks; n++ )
+      const Map::single_landmark_s &landmark = map_landmarks.landmark_list[n];
+
+      // calculate translation in world coordinates
+      double dx_world = landmark.x_f - p.x;
+      double dy_world = landmark.y_f - p.y;
+
+      // add only landmarks in sensor range
+      if ( sqrt(dx_world * dx_world + dy_world * dy_world) < sensor_range )
       {
-        const Map::single_landmark_s &landmark = map_landmarks.landmark_list[n];
+        LandmarkObs pred;
+        pred.id = landmark.id_i;
 
-        // calculate translation in world coordinates
-        double dx_world = landmark.x_f - p.x;
-        double dy_world = landmark.y_f - p.y;
+        // rotate translation according to particle orientation
+        pred.x =  cos(p.theta) * dx_world + sin(p.theta) * dy_world;
+        pred.y = -sin(p.theta) * dx_world + cos(p.theta) * dy_world;
 
-        // add only landmarks in sensor range
-        if ( sqrt(dx_world * dx_world + dy_world * dy_world) < sensor_range )
-        {
-          LandmarkObs pred;
-          pred.id = landmark.id_i;
-
-          // rotate translation according to particle orientation
-          pred.x =  cos(p.theta) * dx_world + sin(p.theta) * dy_world;
-          pred.y = -sin(p.theta) * dx_world + cos(p.theta) * dy_world;
-
-          predicted.push_back(pred);
-        }
+        predicted.push_back(pred);
       }
-
-      // associate predicted measurements with actual measurements
-      std::vector<int> pred_to_obs_index;
-      dataAssociation(predicted, observations, pred_to_obs_index);
-
-      // update weight
-      p.weight = 1.0;
-      for ( unsigned n=0; n<predicted.size(); n++ )
-      {
-        const LandmarkObs &pred = predicted[n];
-        double dx(sensor_range), dy(sensor_range);
-        if ( pred_to_obs_index[n] != -1 )
-        {
-          const LandmarkObs &obs = observations[pred_to_obs_index[n]];
-          if ( i == 0 ) cout << "Landmark association [" << pred.id << "]: pred=(" << pred.x << ", " << pred.y << "), ";
-          if ( i == 0 ) cout <<                                            "obs=(" << obs.x  << ", " << obs.y  << ")" << endl;
-          dx = pred.x - obs.x;
-          dy = pred.y - obs.y;
-        }
-        else
-        {
-          cout << "Landmark association [" << pred.id << "]: NONE" << endl;
-        }
-
-        double arg = (dx * dx) / (std_landmark[0] * std_landmark[0])
-          + (dy * dy) / (std_landmark[1] * std_landmark[1]);
-        arg *= -0.5;
-        double probab = exp(arg) / (2*M_PI * std_landmark[0] * std_landmark[1]);
-        if ( i == 0 ) cout << "   ---> probab=" << probab << endl;
-        p.weight *= probab;
-      }
-      weights[i] = p.weight;
     }
+
+    // associate predicted measurements with actual measurements
+    std::vector<int> pred_to_obs_index;
+    dataAssociation(predicted, observations, pred_to_obs_index);
+
+    // update weight
+    p.weight = 1.0;
+    for ( unsigned n=0; n<predicted.size(); n++ )
+    {
+      const LandmarkObs &pred = predicted[n];
+      double dx(sensor_range), dy(sensor_range);
+      if ( pred_to_obs_index[n] != -1 )
+      {
+        const LandmarkObs &obs = observations[pred_to_obs_index[n]];
+        if ( i == 0 ) cout << "Landmark association [" << pred.id << "]: pred=(" << pred.x << ", " << pred.y << "), ";
+        if ( i == 0 ) cout <<                                            "obs=(" << obs.x  << ", " << obs.y  << ")" << endl;
+        dx = pred.x - obs.x;
+        dy = pred.y - obs.y;
+      }
+      else
+      {
+        cout << "Landmark association [" << pred.id << "]: NONE" << endl;
+      }
+
+      double arg = (dx * dx) / (std_landmark[0] * std_landmark[0])
+        + (dy * dy) / (std_landmark[1] * std_landmark[1]);
+      arg *= -0.5;
+      double probab = exp(arg) / (2*M_PI * std_landmark[0] * std_landmark[1]);
+      if ( i == 0 ) cout << "   ---> probab=" << probab << endl;
+      p.weight *= probab;
+    }
+    weights[i] = p.weight;
+  }
+
+  ///////////////////////////////////////////////////////////////////////
+  // debug output begin
+  int best_idx(-1);
+  double best_weight(0.0);
+  for ( int i=0; i<num_particles; i++ )
+  {
+    if ( particles[i].weight > best_weight )
+    {
+      best_idx    = i;
+      best_weight = particles[i].weight;
+    }
+  }
+  if ( best_idx != -1 )
+  {
+    const Particle &p = particles[best_idx];
+    std::vector<LandmarkObs> predicted;
+    unsigned num_landmarks = map_landmarks.landmark_list.size();
+    predicted.reserve(num_landmarks);
+    for ( unsigned n=0; n<num_landmarks; n++ )
+    {
+      const Map::single_landmark_s &landmark = map_landmarks.landmark_list[n];
+
+      // calculate translation in world coordinates
+      double dx_world = landmark.x_f - p.x;
+      double dy_world = landmark.y_f - p.y;
+
+      // add only landmarks in sensor range
+      if ( sqrt(dx_world * dx_world + dy_world * dy_world) < sensor_range )
+      {
+        LandmarkObs pred;
+        pred.id = landmark.id_i;
+
+        // rotate translation according to particle orientation
+        pred.x =  cos(p.theta) * dx_world + sin(p.theta) * dy_world;
+        pred.y = -sin(p.theta) * dx_world + cos(p.theta) * dy_world;
+
+        predicted.push_back(pred);
+      }
+    }
+
+    // associate predicted measurements with actual measurements
+    std::vector<int> pred_to_obs_index;
+    dataAssociation(predicted, observations, pred_to_obs_index);
+
+    // set associations
+    std::vector<int> associations;
+    std::vector<double> sense_x, sense_y;
+    for ( unsigned n=0; n<predicted.size(); n++ )
+    {
+      if ( pred_to_obs_index[n] != -1 )
+      {
+        associations.push_back(predicted[n].id);
+
+        const LandmarkObs &obs = observations[pred_to_obs_index[n]];
+        
+        // convert to world coordinates
+        double dx_world = cos(p.theta) * obs.x - sin(p.theta) * obs.y;
+        double dy_world = sin(p.theta) * obs.x + cos(p.theta) * obs.y;
+        sense_x.push_back(p.x + dx_world);
+        sense_y.push_back(p.y + dy_world);
+      }
+    }
+    SetAssociations(p, associations, sense_x, sense_y);
+  }
+  // debug output end
+  ///////////////////////////////////////////////////////////////////////
 }
 
 void ParticleFilter::resample() {
@@ -198,7 +265,7 @@ void ParticleFilter::resample() {
   for ( int i=0; i<num_particles; i++ )
   {
     int res_idx = dist(gen);
-    if ( i < 10 ) cout << "resampled " << res_idx << " with weight " << weights[res_idx] << endl;
+    //if ( i < 10 ) cout << "resampled " << res_idx << " with weight " << weights[res_idx] << endl;
     res_particles.push_back( particles[res_idx] );
   }
 
