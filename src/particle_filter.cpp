@@ -229,6 +229,8 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
     std::vector<int> pred_to_obs_index;
     dataAssociation(predicted, observations, pred_to_obs_index);
 
+    cout << "Best particle: (" << p.x << ", " << p.y << ") with weight " << p.weight << endl;
+
     // set associations
     std::vector<int> associations;
     std::vector<double> sense_x, sense_y;
@@ -238,8 +240,8 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
       {
         const LandmarkObs &obs = observations[pred_to_obs_index[n]];
 
-        cout << "Landmark association [" << predicted[n].id << "]: pred=(" << predicted[n].x << ", " << predicted[n].y << "), ";
-        cout <<                                                    "obs=(" << obs.x          << ", " << obs.y          << ")" << endl;
+        cout << " --> Landmark association [" << predicted[n].id << "]: pred=(" << predicted[n].x << ", " << predicted[n].y << "), ";
+        cout <<                                                         "obs=(" << obs.x          << ", " << obs.y          << ")" << endl;
         associations.push_back(predicted[n].id);
         
         // convert to world coordinates
@@ -249,8 +251,8 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
         sense_y.push_back(p.y + dy_world);
       }
     }
-    cout << "   ---> weight=" << p.weight << endl;
-    SetAssociations(p, associations, sense_x, sense_y);
+
+    particles[best_idx] = SetAssociations(p, associations, sense_x, sense_y);
   }
   // debug output end
   ///////////////////////////////////////////////////////////////////////
